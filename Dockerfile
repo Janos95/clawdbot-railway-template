@@ -56,7 +56,7 @@ RUN apt-get update \
 RUN curl -fsSL -o /tmp/signal-cli.tar.gz \
     "https://github.com/AsamK/signal-cli/releases/download/v${SIGNAL_CLI_VERSION}/signal-cli-${SIGNAL_CLI_VERSION}-Linux-native.tar.gz" \
   && tar -xzf /tmp/signal-cli.tar.gz -C /opt \
-  && test -x /opt/signal-cli/bin/signal-cli \
+  && test -x /opt/signal-cli \
   && rm -f /tmp/signal-cli.tar.gz
 
 # `openclaw update` expects pnpm. Provide it in the runtime image.
@@ -70,7 +70,7 @@ ENV NPM_CONFIG_CACHE=/data/npm-cache
 ENV PNPM_HOME=/data/pnpm
 ENV PNPM_STORE_DIR=/data/pnpm-store
 ENV SIGNAL_CLI_CONFIG_DIR=/data/signal-cli
-ENV SIGNAL_CLI_BIN=/opt/signal-cli/bin/signal-cli
+ENV SIGNAL_CLI_BIN=/opt/signal-cli
 ENV PATH="/data/npm/bin:/data/pnpm:${PATH}"
 
 WORKDIR /app
