@@ -43,6 +43,8 @@ RUN pnpm ui:install && pnpm ui:build
 FROM node:22-bookworm
 ENV NODE_ENV=production
 
+ARG SIGNAL_CLI_VERSION=0.13.22
+
 RUN apt-get update \
   && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
     ca-certificates \
@@ -50,6 +52,12 @@ RUN apt-get update \
     python3 \
     python3-venv \
   && rm -rf /var/lib/apt/lists/*
+
+RUN curl -fsSL -o /tmp/signal-cli.tar.gz \
+    "https://github.com/AsamK/signal-cli/releases/download/v${SIGNAL_CLI_VERSION}/signal-cli-${SIGNAL_CLI_VERSION}-Linux-native.tar.gz" \
+  && tar -xzf /tmp/signal-cli.tar.gz -C /opt \
+  && test -x /opt/signal-cli/bin/signal-cli \
+  && rm -f /tmp/signal-cli.tar.gz
 
 # `openclaw update` expects pnpm. Provide it in the runtime image.
 RUN corepack enable && corepack prepare pnpm@10.23.0 --activate
@@ -61,6 +69,8 @@ ENV NPM_CONFIG_PREFIX=/data/npm
 ENV NPM_CONFIG_CACHE=/data/npm-cache
 ENV PNPM_HOME=/data/pnpm
 ENV PNPM_STORE_DIR=/data/pnpm-store
+ENV SIGNAL_CLI_CONFIG_DIR=/data/signal-cli
+ENV SIGNAL_CLI_BIN=/opt/signal-cli/bin/signal-cli
 ENV PATH="/data/npm/bin:/data/pnpm:${PATH}"
 
 WORKDIR /app
@@ -75,6 +85,9 @@ COPY --from=openclaw-build /openclaw /openclaw
 # Provide an openclaw executable
 RUN printf '%s\n' '#!/usr/bin/env bash' 'exec node /openclaw/dist/entry.js "$@"' > /usr/local/bin/openclaw \
   && chmod +x /usr/local/bin/openclaw
+
+COPY scripts/signal-cli-persist.sh /usr/local/bin/signal-cli
+RUN chmod +x /usr/local/bin/signal-cli
 
 COPY src ./src
 

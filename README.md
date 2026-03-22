@@ -82,10 +82,59 @@ What persists cleanly today:
   - npm globals: `/data/npm` (binaries in `/data/npm/bin`)
   - pnpm globals: `/data/pnpm` (binaries) + `/data/pnpm-store` (store)
 - **Python packages:** create a venv under `/data` (example below). The runtime image includes Python + venv support.
+- **Signal account state:** this image bundles `signal-cli` and routes its `--config` dir to `/data/signal-cli`, so the linked device, keys, and message state survive redeploys and can move to another host with the volume.
 
 What does *not* persist cleanly:
 - `apt-get install ...` (installs into `/usr/*`)
 - Homebrew installs (typically `/opt/homebrew` or similar)
+
+### Signal (portable setup)
+
+This image includes the `signal-cli` native Linux build by default and wraps it so:
+
+- running `signal-cli ...` actually uses `/data/signal-cli`
+- OpenClaw can keep `channels.signal.cliPath` as simply `signal-cli`
+- moving the `/data` volume to another deployment also moves the Signal identity
+
+Recommended approach:
+
+1. Use a dedicated Signal number for the bot.
+2. SSH into the container and link/register Signal with the bundled wrapper:
+
+```bash
+signal-cli link -n "OpenClaw"
+```
+
+Or register a phone number directly:
+
+```bash
+signal-cli -a +15551234567 register
+signal-cli -a +15551234567 verify 123-456
+```
+
+3. Configure OpenClaw with a Signal channel:
+
+```json
+{
+  "channels": {
+    "signal": {
+      "enabled": true,
+      "account": "+15551234567",
+      "cliPath": "signal-cli",
+      "dmPolicy": "pairing",
+      "allowFrom": ["+15557654321"]
+    }
+  }
+}
+```
+
+Portable migration note:
+
+- preserve `/data/signal-cli`
+- preserve your OpenClaw state dir (`/data/.openclaw` or `/data/.clawdbot` on older deployments)
+- deploy the same image or another image that provides `signal-cli`
+
+That is enough to carry Signal setup across Railway, a VPS, Docker Compose, or another container host.
 
 ### Optional bootstrap hook
 
