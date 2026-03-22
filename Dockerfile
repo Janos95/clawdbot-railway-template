@@ -43,7 +43,7 @@ RUN pnpm ui:install && pnpm ui:build
 FROM node:22-bookworm
 ENV NODE_ENV=production
 
-ARG SIGNAL_CLI_VERSION=0.13.22
+ARG SIGNAL_CLI_VERSION=0.14.1
 
 RUN apt-get update \
   && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
